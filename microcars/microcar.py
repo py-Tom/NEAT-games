@@ -219,7 +219,6 @@ def main(genomes, config):
                     abs(car.x - blocks[block_ind].right),
                 )
             )
-            print(n, output)
 
             if output[0] > 0:
                 turn = "left"

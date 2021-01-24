@@ -14,24 +14,30 @@ gen_score = 0
 
 BIRD_IMG = [
     pygame.transform.scale2x(
-        pygame.image.load(os.path.join(os.path.dirname(__file__), "imgs", "bird1.png"))
+        pygame.image.load(
+            os.path.join(os.path.dirname(__file__), "images", "bird1.png")
+        )
     ),
     pygame.transform.scale2x(
-        pygame.image.load(os.path.join(os.path.dirname(__file__), "imgs", "bird2.png"))
+        pygame.image.load(
+            os.path.join(os.path.dirname(__file__), "images", "bird2.png")
+        )
     ),
     pygame.transform.scale2x(
-        pygame.image.load(os.path.join(os.path.dirname(__file__), "imgs", "bird3.png"))
+        pygame.image.load(
+            os.path.join(os.path.dirname(__file__), "images", "bird3.png")
+        )
     ),
 ]
 
 PIPE_IMG = pygame.transform.scale2x(
-    pygame.image.load(os.path.join(os.path.dirname(__file__), "imgs", "pipe.png"))
+    pygame.image.load(os.path.join(os.path.dirname(__file__), "images", "pipe.png"))
 )
 BASE_IMG = pygame.transform.scale2x(
-    pygame.image.load(os.path.join(os.path.dirname(__file__), "imgs", "base.png"))
+    pygame.image.load(os.path.join(os.path.dirname(__file__), "images", "base.png"))
 )
 BG_IMG = pygame.transform.scale2x(
-    pygame.image.load(os.path.join(os.path.dirname(__file__), "imgs", "bg.png"))
+    pygame.image.load(os.path.join(os.path.dirname(__file__), "images", "bg.png"))
 )
 
 STAT_FONT = pygame.font.SysFont("comicsans", 50)

@@ -8,9 +8,9 @@ Run the file with the corresponding game name.
 
 ## Flappy Bird
 
-<img src="/_examples/flappy.gif" />
+<img src="/_/flappy.gif" />
 
 
 ## Cars
 
-<img src="/_examples/microcars.gif"  />
+<img src="/_/microcars.gif"  />
