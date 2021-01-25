@@ -39,6 +39,11 @@ class Runner:
         self.y = y
         self.img = runner_img[0]
         self.img_index = 0
+        self.airtime = 0
+        self.v_y = 0
+        self.y0 = y
+        self.grav = 10
+        self.altitude = y
 
     def draw(self, win):
         """
@@ -57,6 +62,23 @@ class Runner:
         self.img = runner_img[self.img_index]
 
         win.blit(self.img, (self.x, self.y))
+
+    def move(self):
+        self.airtime += 1
+        if self.altitude < self.y0:
+            self.y = (
+                self.v_y * self.airtime + self.grav / 2 * self.airtime ** 2 + self.y0
+            )
+            self.altitude = self.y
+        else:
+            self.y = self.y0
+            self.airtime = 0
+            self.v_y = 0
+            self.altitude = self.y
+
+    def high_jump(self):
+        self.v_y = -100
+        self.altitude = self.y - 100
 
 
 class Track:
@@ -200,9 +222,15 @@ def main():
                 pygame.quit()
                 quit()
 
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
+                print("pressd w")
+                runners[0].high_jump()
+
         sky_m.move()
         bleachers_m.move()
         track_m.move()
+        for runner in runners:
+            runner.move()
         draw_window(win, runners, track_m, bleachers_m, sky_m)
 
 
