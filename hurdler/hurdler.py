@@ -4,15 +4,22 @@
 import pygame
 import os
 
-WIN_WIDTH = 1000
-WIN_HEIGHT = 500
+WIN_WIDTH = 1200
+WIN_HEIGHT = 600
+
+VELOCITY = 10
 
 curr_dir = os.path.dirname(__file__)
+
 
 runner_img = [
     pygame.image.load(os.path.join(curr_dir, "images", f"run_{i}.png"))
     for i in range(9)
 ]
+bg_img = pygame.image.load(os.path.join(curr_dir, "images", f"bg.png"))
+sky_img = pygame.image.load(os.path.join(curr_dir, "images", f"sky_m.png"))
+bleachers_img = pygame.image.load(os.path.join(curr_dir, "images", f"bleachers_m.png"))
+track_img = pygame.image.load(os.path.join(curr_dir, "images", f"track_m.png"))
 
 
 class Runner:
@@ -27,6 +34,7 @@ class Runner:
 
         return: None
         """
+
         self.x = x
         self.y = y
         self.img = runner_img[0]
@@ -40,18 +48,116 @@ class Runner:
 
         return: None
         """
+
         if self.img_index == 8:
             self.img_index = 0
         else:
             self.img_index += 1
 
-        print(self.img_index)
         self.img = runner_img[self.img_index]
 
         win.blit(self.img, (self.x, self.y))
 
 
-def draw_window(win, runners):
+class Track:
+    """The base on which the runner and hurdles are located."""
+
+    def __init__(self, y):
+        """
+        Create a running track.
+
+        y: height of base (int)
+
+        return: None
+        """
+
+        self.x1 = 0
+        self.x2 = WIN_WIDTH
+        self.y = y
+        self.v_x = VELOCITY
+        self.img = track_img
+        self.width = track_img.get_width()
+
+    def move(self):
+        self.x1 -= self.v_x
+        self.x2 -= self.v_x
+
+        if self.x1 + self.width < 0:
+            self.x1 = self.x2 + self.width
+
+        if self.x2 + self.width < 0:
+            self.x2 = self.x1 + self.width
+
+    def draw(self, win):
+        win.blit(self.img, (self.x1, self.y))
+        win.blit(self.img, (self.x2, self.y))
+
+
+class Bleachers:  # add to Track as decorator
+    """Moving background."""
+
+    def __init__(self, y):
+        """
+        y: height of base (int)
+
+        return: None
+        """
+
+        self.x1 = 0
+        self.x2 = WIN_WIDTH
+        self.y = y
+        self.v_x = 2
+        self.img = bleachers_img
+        self.width = bleachers_img.get_width()
+
+    def move(self):
+        self.x1 -= self.v_x
+        self.x2 -= self.v_x
+
+        if self.x1 + self.width < 0:
+            self.x1 = self.x2 + self.width
+
+        if self.x2 + self.width < 0:
+            self.x2 = self.x1 + self.width
+
+    def draw(self, win):
+        win.blit(self.img, (self.x1, self.y))
+        win.blit(self.img, (self.x2, self.y))
+
+
+class Sky:  # add to Track as decorator
+    """Moving background."""
+
+    def __init__(self, y):
+        """
+        y: height of base (int)
+
+        return: None
+        """
+
+        self.x1 = 0
+        self.x2 = WIN_WIDTH
+        self.y = y
+        self.v_x = 1
+        self.img = sky_img
+        self.width = sky_img.get_width()
+
+    def move(self):
+        self.x1 -= self.v_x
+        self.x2 -= self.v_x
+
+        if self.x1 + self.width < 0:
+            self.x1 = self.x2 + self.width
+
+        if self.x2 + self.width < 0:
+            self.x2 = self.x1 + self.width
+
+    def draw(self, win):
+        win.blit(self.img, (self.x1, self.y))
+        win.blit(self.img, (self.x2, self.y))
+
+
+def draw_window(win, runners, track_m, bleachers_m, sky_m):
     """
     Draw all sprites on screen and update view.
 
@@ -60,10 +166,11 @@ def draw_window(win, runners):
 
     return: None
     """
-    background = pygame.Surface(win.get_size())
-    background.fill((100, 133, 255))
 
-    win.blit(background, (0, 0))
+    win.blit(bg_img, (0, 0))
+    sky_m.draw(win)
+    bleachers_m.draw(win)
+    track_m.draw(win)
 
     for runner in runners:
         runner.draw(win)
@@ -78,8 +185,11 @@ def main():
 
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
     clock = pygame.time.Clock()
+    sky_m = Sky(0)
+    bleachers_m = Bleachers(114)
+    track_m = Track(WIN_HEIGHT - track_img.get_height())
 
-    runners = [Runner(100, 330)]
+    runners = [Runner(100, 420)]
 
     while run:
         clock.tick(30)
@@ -90,7 +200,10 @@ def main():
                 pygame.quit()
                 quit()
 
-        draw_window(win, runners)
+        sky_m.move()
+        bleachers_m.move()
+        track_m.move()
+        draw_window(win, runners, track_m, bleachers_m, sky_m)
 
 
 if __name__ == "__main__":
