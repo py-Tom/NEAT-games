@@ -16,10 +16,10 @@ runner_img = [
     pygame.image.load(os.path.join(curr_dir, "images", f"run_{i}.png"))
     for i in range(9)
 ]
-bg_img = pygame.image.load(os.path.join(curr_dir, "images", f"bg.png"))
-sky_img = pygame.image.load(os.path.join(curr_dir, "images", f"sky_m.png"))
-bleachers_img = pygame.image.load(os.path.join(curr_dir, "images", f"bleachers_m.png"))
-track_img = pygame.image.load(os.path.join(curr_dir, "images", f"track_m.png"))
+bg_img = pygame.image.load(os.path.join(curr_dir, "images", "bg.png"))
+sky_img = pygame.image.load(os.path.join(curr_dir, "images", "sky_m.png"))
+bleachers_img = pygame.image.load(os.path.join(curr_dir, "images", "bleachers_m.png"))
+track_img = pygame.image.load(os.path.join(curr_dir, "images", "track_m.png"))
 
 
 class Runner:
@@ -39,11 +39,12 @@ class Runner:
         self.y = y
         self.img = runner_img[0]
         self.img_index = 0
-        self.airtime = 0
-        self.v_y = 0
         self.y0 = y
-        self.grav = 10
-        self.altitude = y
+
+        self.jump = False
+        self.a = 0
+        self.b = 0
+        self.t = 0
 
     def draw(self, win):
         """
@@ -54,34 +55,82 @@ class Runner:
         return: None
         """
 
-        if self.img_index == 8:
-            self.img_index = 0
-        else:
-            self.img_index += 1
-
-        self.img = runner_img[self.img_index]
-
         win.blit(self.img, (self.x, self.y))
 
     def move(self):
-        self.airtime += 1
-        if self.altitude < self.y0:
-            self.y = (
-                self.v_y * self.airtime + self.grav / 2 * self.airtime ** 2 + self.y0
-            )
-            self.altitude = self.y
+        if self.y < self.y0 or self.jump:
+            self.jump = False
+            self.t += 1
+            d = self.b * self.t + self.a * self.t ** 2
+            self.y = d + self.y0
+            print(d, self.y)
+
         else:
+            print(self.t)
             self.y = self.y0
-            self.airtime = 0
-            self.v_y = 0
-            self.altitude = self.y
+            self.t = 0
+            self.b = 0
+            if self.img_index == 8:
+                self.img_index = 0
+            else:
+                self.img_index += 1
+
+            self.img = runner_img[self.img_index]
 
     def high_jump(self):
-        self.v_y = -100
-        self.altitude = self.y - 100
+        if not self.jump and self.y == self.y0:
+            self.jump = True
+            self.a = 4 / 9
+            self.b = -40 / 3
+            self.img = runner_img[8]
+
+    def long_jump(self):
+        if not self.jump and self.y == self.y0:
+            self.jump = True
+            self.a = 1 / 36
+            self.b = -15 / 9
+            self.img = runner_img[2]
+
+    def low_jump(self):
+        if not self.jump and self.y == self.y0:
+            self.jump = True
+            self.a = 4 / 15
+            self.b = -8
+            self.img = runner_img[0]
+
+    def short_jump(self):
+        if not self.jump and self.y == self.y0:
+            self.jump = True
+            self.a = 2 / 15
+            self.b = -4
+            self.img = runner_img[5]
 
 
-class Track:
+class Background:
+    def __init__(self, y):
+        self.x1 = 0
+        self.x2 = WIN_WIDTH
+        self.y = y
+        self.v_x = VELOCITY
+        self.img = bg_img
+        self.width = bg_img.get_width()
+
+    def move(self):
+        self.x1 -= self.v_x
+        self.x2 -= self.v_x
+
+        if self.x1 + self.width < 0:
+            self.x1 = self.x2 + self.width
+
+        if self.x2 + self.width < 0:
+            self.x2 = self.x1 + self.width
+
+    def draw(self, win):
+        win.blit(self.img, (self.x1, self.y))
+        win.blit(self.img, (self.x2, self.y))
+
+
+class Track(Background):
     """The base on which the runner and hurdles are located."""
 
     def __init__(self, y):
@@ -92,30 +141,13 @@ class Track:
 
         return: None
         """
-
-        self.x1 = 0
-        self.x2 = WIN_WIDTH
-        self.y = y
+        super().__init__(y)
         self.v_x = VELOCITY
         self.img = track_img
         self.width = track_img.get_width()
 
-    def move(self):
-        self.x1 -= self.v_x
-        self.x2 -= self.v_x
 
-        if self.x1 + self.width < 0:
-            self.x1 = self.x2 + self.width
-
-        if self.x2 + self.width < 0:
-            self.x2 = self.x1 + self.width
-
-    def draw(self, win):
-        win.blit(self.img, (self.x1, self.y))
-        win.blit(self.img, (self.x2, self.y))
-
-
-class Bleachers:  # add to Track as decorator
+class Bleachers(Background):
     """Moving background."""
 
     def __init__(self, y):
@@ -124,30 +156,13 @@ class Bleachers:  # add to Track as decorator
 
         return: None
         """
-
-        self.x1 = 0
-        self.x2 = WIN_WIDTH
-        self.y = y
-        self.v_x = 2
+        super().__init__(y)
+        self.v_x = 1
         self.img = bleachers_img
         self.width = bleachers_img.get_width()
 
-    def move(self):
-        self.x1 -= self.v_x
-        self.x2 -= self.v_x
 
-        if self.x1 + self.width < 0:
-            self.x1 = self.x2 + self.width
-
-        if self.x2 + self.width < 0:
-            self.x2 = self.x1 + self.width
-
-    def draw(self, win):
-        win.blit(self.img, (self.x1, self.y))
-        win.blit(self.img, (self.x2, self.y))
-
-
-class Sky:  # add to Track as decorator
+class Sky(Background):
     """Moving background."""
 
     def __init__(self, y):
@@ -156,27 +171,10 @@ class Sky:  # add to Track as decorator
 
         return: None
         """
-
-        self.x1 = 0
-        self.x2 = WIN_WIDTH
-        self.y = y
-        self.v_x = 1
+        super().__init__(y)
+        self.v_x = 0.5
         self.img = sky_img
         self.width = sky_img.get_width()
-
-    def move(self):
-        self.x1 -= self.v_x
-        self.x2 -= self.v_x
-
-        if self.x1 + self.width < 0:
-            self.x1 = self.x2 + self.width
-
-        if self.x2 + self.width < 0:
-            self.x2 = self.x1 + self.width
-
-    def draw(self, win):
-        win.blit(self.img, (self.x1, self.y))
-        win.blit(self.img, (self.x2, self.y))
 
 
 def draw_window(win, runners, track_m, bleachers_m, sky_m):
@@ -222,9 +220,19 @@ def main():
                 pygame.quit()
                 quit()
 
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_w:
-                print("pressd w")
-                runners[0].high_jump()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_w:
+                    print("pressed w")
+                    runners[0].high_jump()
+                if event.key == pygame.K_d:
+                    print("pressed d")
+                    runners[0].long_jump()
+                if event.key == pygame.K_s:
+                    print("pressed s")
+                    runners[0].low_jump()
+                if event.key == pygame.K_a:
+                    print("pressed a")
+                    runners[0].short_jump()
 
         sky_m.move()
         bleachers_m.move()
