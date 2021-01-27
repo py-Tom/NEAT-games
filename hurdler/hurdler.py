@@ -1,8 +1,10 @@
 """Neural Network learns to play hurdler-game."""
 
-#  import neat
-import pygame
 import os
+import random
+
+import neat
+import pygame
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 600
@@ -20,6 +22,10 @@ bg_img = pygame.image.load(os.path.join(curr_dir, "images", "bg.png"))
 sky_img = pygame.image.load(os.path.join(curr_dir, "images", "sky_m.png"))
 bleachers_img = pygame.image.load(os.path.join(curr_dir, "images", "bleachers_m.png"))
 track_img = pygame.image.load(os.path.join(curr_dir, "images", "track_m.png"))
+hurdle_img = [
+    pygame.image.load(os.path.join(curr_dir, "images", f"hurdle_{i}.png"))
+    for i in ["high", "low", "long", "short"]
+]
 
 
 class Runner:
@@ -124,6 +130,26 @@ class Runner:
             self.b = 9.08560296
             self.c = 15.92898888
 
+    def get_mask(self):
+        return pygame.mask.from_surface(self.img)
+
+
+class Hurdle:
+    def __init__(self, x, y):
+        self.x = x
+
+        self.img = hurdle_img[random.randint(0, 3)]
+        self.y = y - self.img.get_height()
+
+    def move(self):
+        self.x -= VELOCITY
+
+    def draw(self, win):
+        win.blit(self.img, (self.x, self.y))
+
+    def get_mask(self):
+        return pygame.mask.from_surface(self.img)
+
 
 class Background:
     def __init__(self, y):
@@ -196,7 +222,7 @@ class Sky(Background):
         self.width = sky_img.get_width()
 
 
-def draw_window(win, runners, track_m, bleachers_m, sky_m):
+def draw_window(win, runners, hurdles, track_m, bleachers_m, sky_m):
     """
     Draw all sprites on screen and update view.
 
@@ -207,12 +233,14 @@ def draw_window(win, runners, track_m, bleachers_m, sky_m):
     """
 
     win.blit(bg_img, (0, 0))
-    sky_m.draw(win)
-    bleachers_m.draw(win)
-    track_m.draw(win)
+    # sky_m.draw(win)
+    # bleachers_m.draw(win)
+    # track_m.draw(win)
 
     for runner in runners:
         runner.draw(win)
+    for hurdle in hurdles:
+        hurdle.draw(win)
 
     pygame.display.update()
 
@@ -229,6 +257,7 @@ def main():
     track_m = Track(WIN_HEIGHT - track_img.get_height())
 
     runners = [Runner(100, 420)]
+    hurdles = [Hurdle(1200, 540)]
 
     while run:
         clock.tick(30)
@@ -258,7 +287,9 @@ def main():
         track_m.move()
         for runner in runners:
             runner.move()
-        draw_window(win, runners, track_m, bleachers_m, sky_m)
+        for hurdle in hurdles:
+            hurdle.move()
+        draw_window(win, runners, hurdles, track_m, bleachers_m, sky_m)
 
 
 if __name__ == "__main__":
