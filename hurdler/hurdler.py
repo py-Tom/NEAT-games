@@ -44,6 +44,7 @@ class Runner:
         self.jump = False
         self.a = 0
         self.b = 0
+        self.c = 0
         self.t = 0
 
     def draw(self, win):
@@ -61,15 +62,13 @@ class Runner:
         if self.y < self.y0 or self.jump:
             self.jump = False
             self.t += 1
-            d = self.b * self.t + self.a * self.t ** 2
-            self.y = d + self.y0
-            print(d, self.y)
+            displacement = -self.a * self.t ** 2 - self.b * self.t - self.c
+            self.y = displacement + self.y0
+            print(displacement, self.y, self.t)
 
         else:
-            print(self.t)
             self.y = self.y0
             self.t = 0
-            self.b = 0
             if self.img_index == 8:
                 self.img_index = 0
             else:
@@ -78,32 +77,52 @@ class Runner:
             self.img = runner_img[self.img_index]
 
     def high_jump(self):
+        """
+        airtime: 47
+        max_height: 250
+        """
         if not self.jump and self.y == self.y0:
             self.jump = True
-            self.a = 4 / 9
-            self.b = -40 / 3
             self.img = runner_img[8]
+            self.a = -0.46
+            self.b = 21.5
+            self.c = 0.1
 
     def long_jump(self):
+        """
+        airtime: 67
+        max_height: 50
+        """
         if not self.jump and self.y == self.y0:
             self.jump = True
-            self.a = 1 / 36
-            self.b = -15 / 9
             self.img = runner_img[2]
+            self.a = -0.045
+            self.b = 3.0
+            self.c = 0.0
 
     def low_jump(self):
+        """
+        airtime: 30
+        max_height: 100
+        """
         if not self.jump and self.y == self.y0:
             self.jump = True
-            self.a = 4 / 15
-            self.b = -8
             self.img = runner_img[0]
+            self.a = -0.48074986
+            self.b = 14.4224957
+            self.c = -8.16871777
 
     def short_jump(self):
+        """
+        airtime: 17
+        max_height: 50
+        """
         if not self.jump and self.y == self.y0:
             self.jump = True
-            self.a = 2 / 15
-            self.b = -4
             self.img = runner_img[5]
+            self.a = -0.60570686
+            self.b = 9.08560296
+            self.c = 15.92898888
 
 
 class Background:
