@@ -1,6 +1,7 @@
 """Neural Network learns to play hurdler-game."""
 
 import os
+import pickle
 import random
 
 import neat
@@ -374,29 +375,23 @@ def main(genomes, config):
 
             output = nets[i].activate(
                 (
-                    runner.x,
                     runner.x - hurdles[hurdle_index].x,
-                    runner.x
-                    - hurdles[hurdle_index].x
-                    + hurdles[hurdle_index].img.get_width(),
+                    hurdles[hurdle_index].img.get_width(),
                     hurdles[hurdle_index].img.get_height(),
                     runner.x - hurdles[hurdle_index + 1].x,
-                    runner.x
-                    - hurdles[hurdle_index + 1].x
-                    + hurdles[hurdle_index + 1].img.get_width(),
+                    hurdles[hurdle_index + 1].img.get_width(),
                     hurdles[hurdle_index + 1].img.get_height(),
-                    runner.y == runner.y0
                 )
             )
-            # print(output)
+            print(output)
 
-            if output[0] == max(output):
+            if output[0] == max(output) and output[0]:
                 runner.high_jump()
-            elif output[1] == max(output):
+            elif output[1] == max(output) and output[1]:
                 runner.low_jump()
-            elif output[2] == max(output):
+            elif output[2] == max(output) and output[2]:
                 runner.long_jump()
-            elif output[3] == max(output):
+            elif output[3] == max(output) and output[3]:
                 runner.short_jump()
             else:
                 pass
@@ -444,9 +439,34 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
-    winner = p.run(main, 100)
+    winner = p.run(main, 25)
+    print(winner)
+    with open("winner.pickle", "wb") as f:
+        pickle.dump(winner, f)
+
+
+def replay_genome(config_path, genome_path="winner.pickle"):
+    # Load requried NEAT config
+    config = neat.config.Config(
+        neat.DefaultGenome,
+        neat.DefaultReproduction,
+        neat.DefaultSpeciesSet,
+        neat.DefaultStagnation,
+        config_path,
+    )
+
+    # Unpickle saved winner
+    with open(genome_path, "rb") as f:
+        genome = pickle.load(f)
+
+    # Convert loaded genome into required data structure
+    genomes = [(1, genome)]
+
+    # Call game with only the loaded genome
+    main(genomes, config)
 
 
 if __name__ == "__main__":
     config_path = os.path.join(curr_dir, "config-hurdler.txt")
+    # replay_genome(config_path)
     run(config_path)
