@@ -70,7 +70,7 @@ class Runner:
             self.t += 1
             displacement = -self.a * self.t ** 2 - self.b * self.t - self.c
             self.y = displacement + self.y0
-            print(displacement, self.y, self.t)
+            # print(displacement, self.y, self.t)
 
         else:
             self.y = self.y0
@@ -140,6 +140,7 @@ class Hurdle:
 
         self.img = hurdle_img[random.randint(0, 3)]
         self.y = y - self.img.get_height()
+        self.passed = False
 
     def move(self):
         self.x -= VELOCITY
@@ -149,6 +150,14 @@ class Hurdle:
 
     def get_mask(self):
         return pygame.mask.from_surface(self.img)
+
+    def collision(self, runner):
+        runner_mask = runner.get_mask()
+        hurlde_mask = self.get_mask()
+
+        return runner_mask.overlap(
+            hurlde_mask, (self.x - runner.x, self.y - round(runner.y))
+        )
 
 
 class Background:
@@ -249,6 +258,7 @@ def main():
     """Infinite loop."""
 
     run = True
+    score = 0
 
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
     clock = pygame.time.Clock()
@@ -257,7 +267,7 @@ def main():
     track_m = Track(WIN_HEIGHT - track_img.get_height())
 
     runners = [Runner(100, 420)]
-    hurdles = [Hurdle(1200, 540)]
+    hurdles = [Hurdle(1100, 540)]
 
     while run:
         clock.tick(30)
@@ -270,25 +280,49 @@ def main():
 
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
-                    print("pressed w")
+                    # print("pressed w")
                     runners[0].high_jump()
                 if event.key == pygame.K_d:
-                    print("pressed d")
+                    # print("pressed d")
                     runners[0].long_jump()
                 if event.key == pygame.K_s:
-                    print("pressed s")
+                    # print("pressed s")
                     runners[0].low_jump()
                 if event.key == pygame.K_a:
-                    print("pressed a")
+                    # print("pressed a")
                     runners[0].short_jump()
 
         sky_m.move()
         bleachers_m.move()
         track_m.move()
+
         for runner in runners:
             runner.move()
+
+        add_hurdle = False
+        remove_hurdle = []
         for hurdle in hurdles:
+            for i, runner in enumerate(runners):
+                if hurdle.collision(runner):
+                    runners.pop(i)
+
+                if not hurdle.passed and hurdle.x <= runner.x:
+                    hurdle.passed = True
+                    add_hurdle = True
+
+            if hurdle.x + hurdle.img.get_width() < 0:
+                remove_hurdle.append(hurdle)
+
             hurdle.move()
+
+        if add_hurdle:
+            score += 1
+            hurdles.append(Hurdle(1100, 540))
+            print(score)
+
+        for r in remove_hurdle:
+            hurdles.remove(r)
+
         draw_window(win, runners, hurdles, track_m, bleachers_m, sky_m)
 
 
