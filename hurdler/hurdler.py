@@ -6,6 +6,9 @@ import random
 import neat
 import pygame
 
+pygame.font.init()
+STAT_FONT = pygame.font.SysFont("comicsans", 50)
+
 WIN_WIDTH = 1200
 WIN_HEIGHT = 600
 
@@ -143,13 +146,13 @@ class Hurdle:
         self.img = hurdle_img[idx]
 
         if idx == 0:
-            offset = 250
+            offset = 230
         elif idx == 1:
-            offset = 180
+            offset = 170
         elif idx == 2:
-            offset = 200
+            offset = 190
         else:
-            offset = 120
+            offset = 100
 
         self.offset_front = offset
         self.offset_back = offset
@@ -247,7 +250,17 @@ class Sky(Background):
         self.width = sky_img.get_width()
 
 
-def draw_window(win, runners, hurdles, track_m=None, bleachers_m=None, sky_m=None):
+def draw_window(
+    win,
+    runners,
+    hurdles,
+    score,
+    gen_score,
+    alive_score,
+    track_m=None,
+    bleachers_m=None,
+    sky_m=None,
+):
     """
     Draw all sprites on screen and update view.
 
@@ -261,6 +274,15 @@ def draw_window(win, runners, hurdles, track_m=None, bleachers_m=None, sky_m=Non
     # sky_m.draw(win)
     # bleachers_m.draw(win)
     # track_m.draw(win)
+
+    text_score = STAT_FONT.render("Score: " + str(score), 1, (255, 255, 255))
+    win.blit(text_score, (WIN_WIDTH - 10 - text_score.get_width(), 10))
+
+    text_gen = STAT_FONT.render("Gen: " + str(gen_score), 1, (255, 255, 255))
+    win.blit(text_gen, (10, 10))
+
+    text_alive = STAT_FONT.render("Alive: " + str(alive_score), 1, (255, 255, 255))
+    win.blit(text_alive, (10, 50))
 
     for runner in runners:
         runner.draw(win)
@@ -277,10 +299,12 @@ def main(genomes, config):
 
     nets = []
     ge = []
+    runners = []
+
     for _, g in genomes:
         net = neat.nn.FeedForwardNetwork.create(g, config)
         nets.append(net)
-        runners = [Runner(100, 420)]
+        runners.append(Runner(100, 420))
         g.fitness = 0
         ge.append(g)
 
@@ -323,6 +347,16 @@ def main(genomes, config):
         # bleachers_m.move()
         # track_m.move()
 
+        if len(hurdles) < 5:
+            hurdles.append(
+                Hurdle(
+                    hurdles[-1].x
+                    + hurdles[-1].img.get_width()
+                    + hurdles[-1].offset_back,
+                    540,
+                )
+            )
+
         hurdle_index = 0
         if len(runners) > 0:
             if (
@@ -346,8 +380,14 @@ def main(genomes, config):
                     - hurdles[hurdle_index].x
                     + hurdles[hurdle_index].img.get_width(),
                     hurdles[hurdle_index].img.get_height(),
+                    runner.x - hurdles[hurdle_index + 1].x,
+                    runner.x
+                    - hurdles[hurdle_index + 1].x
+                    + hurdles[hurdle_index + 1].img.get_width(),
+                    hurdles[hurdle_index + 1].img.get_height(),
                 )
             )
+            # print(output)
 
             if output[0] == max(output):
                 runner.high_jump()
@@ -355,8 +395,10 @@ def main(genomes, config):
                 runner.low_jump()
             elif output[2] == max(output):
                 runner.long_jump()
-            else:
+            elif output[3] == max(output):
                 runner.short_jump()
+            else:
+                pass
 
         remove_hurdle = []
         for hurdle in hurdles:
@@ -367,10 +409,10 @@ def main(genomes, config):
                     nets.pop(i)
                     ge.pop(i)
 
-                if not hurdle.passed and hurdle.x <= runner.x:
+                if not hurdle.passed and hurdle.x + hurdle.img.get_width() <= runner.x:
                     hurdle.passed = True
                     score += 1
-                    ge[i].fitness += 1
+                    ge[i].fitness += 5
                     # print("score: ", score)
 
             if hurdle.x + hurdle.img.get_width() < 0:
@@ -378,21 +420,12 @@ def main(genomes, config):
 
             hurdle.move()
 
-        if len(hurdles) < 5:
-            hurdles.append(
-                Hurdle(
-                    hurdles[-1].x
-                    + hurdles[-1].img.get_width()
-                    + hurdles[-1].offset_back,
-                    540,
-                )
-            )
-
         for r in remove_hurdle:
             hurdles.remove(r)
 
+        alive_score = len(runners)
         # print("hur: ", len(hurdles), "rem: ", len(remove_hurdle), "run: ", len(runners))
-        draw_window(win, runners, hurdles)
+        draw_window(win, runners, hurdles, score, GEN_SCORE, alive_score)
 
 
 def run(config_path):
