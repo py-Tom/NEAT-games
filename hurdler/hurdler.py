@@ -136,11 +136,25 @@ class Runner:
 
 class Hurdle:
     def __init__(self, x, y):
-        self.x = x
+        # ["high", "low", "long", "short"]
+        idx = random.randint(0, 3)
+        self.img = hurdle_img[idx]
 
-        self.img = hurdle_img[random.randint(0, 3)]
-        self.y = y - self.img.get_height()
+        if idx == 0:
+            offset = 250
+        elif idx == 1:
+            offset = 180
+        elif idx == 2:
+            offset = 200
+        else:
+            offset = 120
+
+        self.offset_front = offset
+        self.offset_back = offset
         self.passed = False
+
+        self.x = x + self.offset_front
+        self.y = y - self.img.get_height()
 
     def move(self):
         self.x -= VELOCITY
@@ -299,7 +313,6 @@ def main():
         for runner in runners:
             runner.move()
 
-        add_hurdle = False
         remove_hurdle = []
         for hurdle in hurdles:
             for i, runner in enumerate(runners):
@@ -308,21 +321,28 @@ def main():
 
                 if not hurdle.passed and hurdle.x <= runner.x:
                     hurdle.passed = True
-                    add_hurdle = True
+                    score += 1
+                    # print("score: ", score)
 
             if hurdle.x + hurdle.img.get_width() < 0:
                 remove_hurdle.append(hurdle)
 
             hurdle.move()
 
-        if add_hurdle:
-            score += 1
-            hurdles.append(Hurdle(1100, 540))
-            print(score)
+        if len(hurdles) < 5:
+            hurdles.append(
+                Hurdle(
+                    hurdles[-1].x
+                    + hurdles[-1].img.get_width()
+                    + hurdles[-1].offset_back,
+                    540,
+                )
+            )
 
         for r in remove_hurdle:
             hurdles.remove(r)
 
+        # print("hur: ", len(hurdles), "rem: ", len(remove_hurdle), "run: ", len(runners))
         draw_window(win, runners, hurdles, track_m, bleachers_m, sky_m)
 
 
