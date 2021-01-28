@@ -6,11 +6,19 @@ This repository allows you to observe the AI learning process. You can watch the
 Run the file with the corresponding game name.
 
 
-## Flappy Bird
+## Hurdler
 
-<img src="/_/flappy.gif" />
+<img src="/_/hurdler.gif"  />
 
 
 ## Cars
 
 <img src="/_/microcars.gif"  />
+
+
+## Flappy Bird
+
+<img src="/_/flappy.gif" />
+
+
+

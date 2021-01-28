@@ -385,6 +385,7 @@ def main(genomes, config):
                     - hurdles[hurdle_index + 1].x
                     + hurdles[hurdle_index + 1].img.get_width(),
                     hurdles[hurdle_index + 1].img.get_height(),
+                    runner.y == runner.y0
                 )
             )
             # print(output)
@@ -412,7 +413,7 @@ def main(genomes, config):
                 if not hurdle.passed and hurdle.x + hurdle.img.get_width() <= runner.x:
                     hurdle.passed = True
                     score += 1
-                    ge[i].fitness += 5
+                    ge[i].fitness += 1
                     # print("score: ", score)
 
             if hurdle.x + hurdle.img.get_width() < 0:
@@ -443,7 +444,7 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
-    winner = p.run(main, 50)
+    winner = p.run(main, 100)
 
 
 if __name__ == "__main__":
