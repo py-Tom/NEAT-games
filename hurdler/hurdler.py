@@ -11,6 +11,8 @@ WIN_HEIGHT = 600
 
 VELOCITY = 10
 
+GEN_SCORE = 0
+
 curr_dir = os.path.dirname(__file__)
 
 
@@ -245,7 +247,7 @@ class Sky(Background):
         self.width = sky_img.get_width()
 
 
-def draw_window(win, runners, hurdles, track_m, bleachers_m, sky_m):
+def draw_window(win, runners, hurdles, track_m=None, bleachers_m=None, sky_m=None):
     """
     Draw all sprites on screen and update view.
 
@@ -268,20 +270,31 @@ def draw_window(win, runners, hurdles, track_m, bleachers_m, sky_m):
     pygame.display.update()
 
 
-def main():
+def main(genomes, config):
     """Infinite loop."""
+    global GEN_SCORE
+    GEN_SCORE += 1
 
-    run = True
-    score = 0
+    nets = []
+    ge = []
+    for _, g in genomes:
+        net = neat.nn.FeedForwardNetwork.create(g, config)
+        nets.append(net)
+        runners = [Runner(100, 420)]
+        g.fitness = 0
+        ge.append(g)
 
     win = pygame.display.set_mode((WIN_WIDTH, WIN_HEIGHT))
     clock = pygame.time.Clock()
-    sky_m = Sky(0)
-    bleachers_m = Bleachers(114)
-    track_m = Track(WIN_HEIGHT - track_img.get_height())
 
-    runners = [Runner(100, 420)]
+    # sky_m = Sky(0)
+    # bleachers_m = Bleachers(114)
+    # track_m = Track(WIN_HEIGHT - track_img.get_height())
+
     hurdles = [Hurdle(1100, 540)]
+
+    run = True
+    score = 0
 
     while run:
         clock.tick(30)
@@ -292,7 +305,7 @@ def main():
                 pygame.quit()
                 quit()
 
-            if event.type == pygame.KEYDOWN:
+            """ if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_w:
                     # print("pressed w")
                     runners[0].high_jump()
@@ -304,24 +317,60 @@ def main():
                     runners[0].low_jump()
                 if event.key == pygame.K_a:
                     # print("pressed a")
-                    runners[0].short_jump()
+                    runners[0].short_jump() """
 
-        sky_m.move()
-        bleachers_m.move()
-        track_m.move()
+        # sky_m.move()
+        # bleachers_m.move()
+        # track_m.move()
 
-        for runner in runners:
+        hurdle_index = 0
+        if len(runners) > 0:
+            if (
+                len(hurdles) > 1
+                and runners[0].x > hurdles[0].x + hurdles[0].img.get_width()
+            ):
+                hurdle_index = 1
+        else:
+            run = False
+            break
+
+        for i, runner in enumerate(runners):
             runner.move()
+            ge[i].fitness += 0.1
+
+            output = nets[i].activate(
+                (
+                    runner.x,
+                    runner.x - hurdles[hurdle_index].x,
+                    runner.x
+                    - hurdles[hurdle_index].x
+                    + hurdles[hurdle_index].img.get_width(),
+                    hurdles[hurdle_index].img.get_height(),
+                )
+            )
+
+            if output[0] == max(output):
+                runner.high_jump()
+            elif output[1] == max(output):
+                runner.low_jump()
+            elif output[2] == max(output):
+                runner.long_jump()
+            else:
+                runner.short_jump()
 
         remove_hurdle = []
         for hurdle in hurdles:
             for i, runner in enumerate(runners):
                 if hurdle.collision(runner):
+                    ge[i].fitness -= 1
                     runners.pop(i)
+                    nets.pop(i)
+                    ge.pop(i)
 
                 if not hurdle.passed and hurdle.x <= runner.x:
                     hurdle.passed = True
                     score += 1
+                    ge[i].fitness += 1
                     # print("score: ", score)
 
             if hurdle.x + hurdle.img.get_width() < 0:
@@ -343,8 +392,27 @@ def main():
             hurdles.remove(r)
 
         # print("hur: ", len(hurdles), "rem: ", len(remove_hurdle), "run: ", len(runners))
-        draw_window(win, runners, hurdles, track_m, bleachers_m, sky_m)
+        draw_window(win, runners, hurdles)
+
+
+def run(config_path):
+    config = neat.config.Config(
+        neat.DefaultGenome,
+        neat.DefaultReproduction,
+        neat.DefaultSpeciesSet,
+        neat.DefaultStagnation,
+        config_path,
+    )
+
+    p = neat.Population(config)
+
+    p.add_reporter(neat.StdOutReporter(True))
+    stats = neat.StatisticsReporter()
+    p.add_reporter(stats)
+
+    winner = p.run(main, 50)
 
 
 if __name__ == "__main__":
-    main()
+    config_path = os.path.join(curr_dir, "config-hurdler.txt")
+    run(config_path)
