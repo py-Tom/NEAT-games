@@ -1,4 +1,4 @@
-"""Neural Network learns to play hurdler-game."""
+"""Neural Network (NEAT) learns to play hurdler-game."""
 
 import os
 import pickle
@@ -7,19 +7,16 @@ import random
 import neat
 import pygame
 
-pygame.font.init()
-STAT_FONT = pygame.font.SysFont("comicsans", 50)
 
 WIN_WIDTH = 1200
 WIN_HEIGHT = 600
-
 VELOCITY = 10
-
 GEN_SCORE = 0
 
+pygame.font.init()
+STAT_FONT = pygame.font.SysFont("consolas", 30)
+
 curr_dir = os.path.dirname(__file__)
-
-
 runner_img = [
     pygame.image.load(os.path.join(curr_dir, "images", f"run_{i}.png"))
     for i in range(9)
@@ -61,7 +58,7 @@ class Runner:
 
     def draw(self, win):
         """
-        Animate runner.
+        Show runner on screen.
 
         win: game window (pygame Surface / Window)
 
@@ -71,12 +68,16 @@ class Runner:
         win.blit(self.img, (self.x, self.y))
 
     def move(self):
+        """
+        Change y coord according to jump function.
+
+        return: None
+        """
         if self.y < self.y0 or self.jump:
             self.jump = False
             self.t += 1
             displacement = -self.a * self.t ** 2 - self.b * self.t - self.c
             self.y = displacement + self.y0
-            # print(displacement, self.y, self.t)
 
         else:
             self.y = self.y0
@@ -137,10 +138,21 @@ class Runner:
             self.c = 15.92898888
 
     def get_mask(self):
+        """
+        Convert image to zero-one matrix.
+
+        return: (pygame Mask)
+        """
         return pygame.mask.from_surface(self.img)
 
 
 class Hurdle:
+    """
+    Create obstacle for runners.
+    x: coord px (int)
+    y: coord px (int)
+    """
+
     def __init__(self, x, y):
         # ["high", "low", "long", "short"]
         idx = random.randint(0, 3)
@@ -163,15 +175,38 @@ class Hurdle:
         self.y = y - self.img.get_height()
 
     def move(self):
+        """
+        Move image of object.
+
+        return: None
+        """
         self.x -= VELOCITY
 
     def draw(self, win):
+        """
+        Shows image on game window.
+
+        win: game window (pygame Surface / Window)
+
+        return: None
+        """
         win.blit(self.img, (self.x, self.y))
 
     def get_mask(self):
+        """
+        Convert image to zero-one matrix.
+
+        return: (pygame Mask)
+        """
+
         return pygame.mask.from_surface(self.img)
 
     def collision(self, runner):
+        """
+        Check if pixels in two images are overlapping.
+
+        return: Bool
+        """
         runner_mask = runner.get_mask()
         hurlde_mask = self.get_mask()
 
@@ -181,6 +216,17 @@ class Hurdle:
 
 
 class Background:
+    """
+    Moving background.
+
+    x1: image_1 coord #px (int)
+    x2: image_2 coord #px (int)
+    y: coord #px (int)
+    v_x: x-axis velocity #px (int)
+    img: (pygame Surface)
+    width: #px (int)
+    """
+
     def __init__(self, y):
         self.x1 = 0
         self.x2 = WIN_WIDTH
@@ -190,6 +236,10 @@ class Background:
         self.width = bg_img.get_width()
 
     def move(self):
+        """
+        Move two of the same images simultaneously in a loop.
+        """
+
         self.x1 -= self.v_x
         self.x2 -= self.v_x
 
@@ -200,21 +250,27 @@ class Background:
             self.x2 = self.x1 + self.width
 
     def draw(self, win):
+        """
+        Shows image on game window.
+
+        win: game window (pygame Surface / Window)
+
+        return: None
+        """
         win.blit(self.img, (self.x1, self.y))
         win.blit(self.img, (self.x2, self.y))
 
 
 class Track(Background):
-    """The base on which the runner and hurdles are located."""
+    """
+    Moving bottom background.
+
+    y: (int)
+
+    return: None
+    """
 
     def __init__(self, y):
-        """
-        Create a running track.
-
-        y: height of base (int)
-
-        return: None
-        """
         super().__init__(y)
         self.v_x = VELOCITY
         self.img = track_img
@@ -222,14 +278,15 @@ class Track(Background):
 
 
 class Bleachers(Background):
-    """Moving background."""
+    """
+    Moving middle background.
+
+    y: coord px (int)
+
+    return: None
+    """
 
     def __init__(self, y):
-        """
-        y: height of base (int)
-
-        return: None
-        """
         super().__init__(y)
         self.v_x = 1
         self.img = bleachers_img
@@ -237,14 +294,15 @@ class Bleachers(Background):
 
 
 class Sky(Background):
-    """Moving background."""
+    """
+    Moving top background.
+
+    y: coord px (int)
+
+    return: None
+    """
 
     def __init__(self, y):
-        """
-        y: height of base (int)
-
-        return: None
-        """
         super().__init__(y)
         self.v_x = 0.5
         self.img = sky_img
@@ -266,7 +324,14 @@ def draw_window(
     Draw all sprites on screen and update view.
 
     win: game window (pygame Surface / Window)
-    runners: list of Runner objects
+    runners: Runner objects (list)
+    hurdles: Hurdle objects (list)
+    score: (int)
+    gen_score: number of generation (int)
+    alive_score: alive genomes (int)
+    track_m: moving bottom background (pygame Surface)
+    bleachers_m: moving middle background (pygame Surface)
+    sky_m: moving top background (pygame Surface)
 
     return: None
     """
@@ -293,8 +358,16 @@ def draw_window(
     pygame.display.update()
 
 
-def main(genomes, config):
-    """Infinite loop."""
+def game(genomes, config):
+    """
+    Run AI controlled game.
+
+    genomes:
+    config:
+
+    return: None
+    """
+
     global GEN_SCORE
     GEN_SCORE += 1
 
@@ -318,31 +391,17 @@ def main(genomes, config):
 
     hurdles = [Hurdle(1100, 540)]
 
-    run = True
+    game_loop = True
     score = 0
 
-    while run:
+    while game_loop:
         clock.tick(30)
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                run = False
+                game_loop = False
                 pygame.quit()
                 quit()
-
-            """ if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_w:
-                    # print("pressed w")
-                    runners[0].high_jump()
-                if event.key == pygame.K_d:
-                    # print("pressed d")
-                    runners[0].long_jump()
-                if event.key == pygame.K_s:
-                    # print("pressed s")
-                    runners[0].low_jump()
-                if event.key == pygame.K_a:
-                    # print("pressed a")
-                    runners[0].short_jump() """
 
         # sky_m.move()
         # bleachers_m.move()
@@ -366,7 +425,7 @@ def main(genomes, config):
             ):
                 hurdle_index = 1
         else:
-            run = False
+            game_loop = False
             break
 
         for i, runner in enumerate(runners):
@@ -383,15 +442,14 @@ def main(genomes, config):
                     hurdles[hurdle_index + 1].img.get_height(),
                 )
             )
-            print(output)
 
-            if output[0] == max(output) and output[0]:
+            if output[0] == max(output):
                 runner.high_jump()
-            elif output[1] == max(output) and output[1]:
+            elif output[1] == max(output):
                 runner.low_jump()
-            elif output[2] == max(output) and output[2]:
+            elif output[2] == max(output):
                 runner.long_jump()
-            elif output[3] == max(output) and output[3]:
+            elif output[3] == max(output):
                 runner.short_jump()
             else:
                 pass
@@ -409,22 +467,23 @@ def main(genomes, config):
                     hurdle.passed = True
                     score += 1
                     ge[i].fitness += 1
-                    # print("score: ", score)
 
             if hurdle.x + hurdle.img.get_width() < 0:
                 remove_hurdle.append(hurdle)
 
             hurdle.move()
 
-        for r in remove_hurdle:
-            hurdles.remove(r)
+        for passed in remove_hurdle:
+            hurdles.remove(passed)
 
         alive_score = len(runners)
-        # print("hur: ", len(hurdles), "rem: ", len(remove_hurdle), "run: ", len(runners))
+
         draw_window(win, runners, hurdles, score, GEN_SCORE, alive_score)
 
 
 def run(config_path):
+    """Run simulation and train new network."""
+
     config = neat.config.Config(
         neat.DefaultGenome,
         neat.DefaultReproduction,
@@ -439,14 +498,15 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
-    winner = p.run(main, 25)
-    print(winner)
+    winner = p.run(game, 10)
+
     with open("winner.pickle", "wb") as f:
         pickle.dump(winner, f)
 
 
 def replay_genome(config_path, genome_path="winner.pickle"):
-    # Load requried NEAT config
+    """Run simulation with trained network."""
+
     config = neat.config.Config(
         neat.DefaultGenome,
         neat.DefaultReproduction,
@@ -455,15 +515,11 @@ def replay_genome(config_path, genome_path="winner.pickle"):
         config_path,
     )
 
-    # Unpickle saved winner
     with open(genome_path, "rb") as f:
         genome = pickle.load(f)
 
-    # Convert loaded genome into required data structure
     genomes = [(1, genome)]
-
-    # Call game with only the loaded genome
-    main(genomes, config)
+    game(genomes, config)
 
 
 if __name__ == "__main__":
