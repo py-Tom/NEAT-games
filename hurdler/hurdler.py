@@ -16,17 +16,17 @@ GEN_SCORE = 0
 pygame.font.init()
 STAT_FONT = pygame.font.SysFont("consolas", 30)
 
-curr_dir = os.path.dirname(__file__)
+local_dir = os.path.dirname(__file__)
 runner_img = [
-    pygame.image.load(os.path.join(curr_dir, "images", f"run_{i}.png"))
+    pygame.image.load(os.path.join(local_dir, "images", f"run_{i}.png"))
     for i in range(9)
 ]
-bg_img = pygame.image.load(os.path.join(curr_dir, "images", "bg.png"))
-sky_img = pygame.image.load(os.path.join(curr_dir, "images", "sky_m.png"))
-bleachers_img = pygame.image.load(os.path.join(curr_dir, "images", "bleachers_m.png"))
-track_img = pygame.image.load(os.path.join(curr_dir, "images", "track_m.png"))
+bg_img = pygame.image.load(os.path.join(local_dir, "images", "bg.png"))
+sky_img = pygame.image.load(os.path.join(local_dir, "images", "sky_m.png"))
+bleachers_img = pygame.image.load(os.path.join(local_dir, "images", "bleachers_m.png"))
+track_img = pygame.image.load(os.path.join(local_dir, "images", "track_m.png"))
 hurdle_img = [
-    pygame.image.load(os.path.join(curr_dir, "images", f"hurdle_{i}.png"))
+    pygame.image.load(os.path.join(local_dir, "images", f"hurdle_{i}.png"))
     for i in ["high", "low", "long", "short"]
 ]
 
@@ -157,6 +157,8 @@ class Hurdle:
         # ["high", "low", "long", "short"]
         idx = random.randint(0, 3)
         self.img = hurdle_img[idx]
+        self.width = self.img.get_width()
+        self.height = self.img.get_height()
 
         if idx == 0:
             offset = 230
@@ -172,7 +174,7 @@ class Hurdle:
         self.passed = False
 
         self.x = x + self.offset_front
-        self.y = y - self.img.get_height()
+        self.y = y - self.height
 
     def move(self):
         """
@@ -362,9 +364,6 @@ def game(genomes, config):
     """
     Run AI controlled game.
 
-    genomes:
-    config:
-
     return: None
     """
 
@@ -410,19 +409,14 @@ def game(genomes, config):
         if len(hurdles) < 5:
             hurdles.append(
                 Hurdle(
-                    hurdles[-1].x
-                    + hurdles[-1].img.get_width()
-                    + hurdles[-1].offset_back,
+                    hurdles[-1].x + hurdles[-1].width + hurdles[-1].offset_back,
                     540,
                 )
             )
 
         hurdle_index = 0
         if len(runners) > 0:
-            if (
-                len(hurdles) > 1
-                and runners[0].x > hurdles[0].x + hurdles[0].img.get_width()
-            ):
+            if len(hurdles) > 1 and runners[0].x > hurdles[0].x + hurdles[0].width:
                 hurdle_index = 1
         else:
             game_loop = False
@@ -435,11 +429,11 @@ def game(genomes, config):
             output = nets[i].activate(
                 (
                     runner.x - hurdles[hurdle_index].x,
-                    hurdles[hurdle_index].img.get_width(),
-                    hurdles[hurdle_index].img.get_height(),
+                    hurdles[hurdle_index].width,
+                    hurdles[hurdle_index].height,
                     runner.x - hurdles[hurdle_index + 1].x,
-                    hurdles[hurdle_index + 1].img.get_width(),
-                    hurdles[hurdle_index + 1].img.get_height(),
+                    hurdles[hurdle_index + 1].width,
+                    hurdles[hurdle_index + 1].height,
                 )
             )
 
@@ -463,12 +457,12 @@ def game(genomes, config):
                     nets.pop(i)
                     ge.pop(i)
 
-                if not hurdle.passed and hurdle.x + hurdle.img.get_width() <= runner.x:
+                if not hurdle.passed and hurdle.x + hurdle.width <= runner.x:
                     hurdle.passed = True
                     score += 1
                     ge[i].fitness += 1
 
-            if hurdle.x + hurdle.img.get_width() < 0:
+            if hurdle.x + hurdle.width < 0:
                 remove_hurdle.append(hurdle)
 
             hurdle.move()
@@ -523,6 +517,6 @@ def replay_genome(config_path, genome_path="winner.pickle"):
 
 
 if __name__ == "__main__":
-    config_path = os.path.join(curr_dir, "config-hurdler.txt")
+    config_path = os.path.join(local_dir, "config-hurdler.txt")
     # replay_genome(config_path)
     run(config_path)
