@@ -492,7 +492,7 @@ def run(config_path):
     stats = neat.StatisticsReporter()
     p.add_reporter(stats)
 
-    winner = p.run(game, 10)
+    winner = p.run(game, 25)
 
     with open("winner.pickle", "wb") as f:
         pickle.dump(winner, f)
@@ -516,7 +516,19 @@ def replay_genome(config_path, genome_path="winner.pickle"):
     game(genomes, config)
 
 
+def run_mode():
+    """Chose how to run the simulation."""
+
+    mode = input("[1] Train new network\n[2] Run saved network\n")
+    if mode == "1":
+        run(config_path)
+    elif mode == "2":
+        replay_genome(config_path)
+    else:
+        return run_mode()
+    return None
+
+
 if __name__ == "__main__":
     config_path = os.path.join(local_dir, "config-hurdler.txt")
-    # replay_genome(config_path)
-    run(config_path)
+    run_mode()
